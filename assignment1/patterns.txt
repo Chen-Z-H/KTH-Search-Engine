@@ -1,0 +1,53 @@
+//
+//  Information retrieval course
+//  First version: Johan Boye 2016
+//
+// In this file you can put your regular expressions
+// for matching non-standard words (like mail addresses).
+//
+// As you have probably already understood, lines beginning
+// with "//" are comments.
+
+// Twenty-four seven
+\d+/\d+
+
+// ADD YOUR PATTERNS HERE
+
+//term seperated by '
+^[a-zA-Z]*\'[a-zA-Z]+$
+
+//email
+^[a-zA-Z0-9_\.]{1,63}[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9\.]{1,253}[a-z]
+
+// URL
+(\w+):\/\/([^/:]+)(:\d*)?.*
+
+//IP address
+^(((25[0-5])|(2[0-4][0-9])|(1?[0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1?[0-9]{1,2}))
+
+//phone number
+^(\w+\-)+(\w+)
+
+//decimal and the number of chapter
+(\d+\.)+\d+
+
+//time
+^((2[0-3])|([0-1][0-9])):([0-5][0-9]):([0-5][0-9])
+
+//scientific notation
+^(([0-9]{1,3},)+)([0-9]{3})
+
+//phone number
+^\+\d+
+
+//
+^((?i)(a\.d\.|b\.c\.))
+^((?i)(a\.m\.|p\.m\.))
+
+e\.g\.
+\-\-
+
+\\price
+\$\d+
+
+\\ expression count: 15
