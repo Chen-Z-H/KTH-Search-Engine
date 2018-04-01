@@ -65,6 +65,8 @@ public class KGramIndex {
         }
         
         int pp1 = 0, pp2 = 0;
+        int p1_size = p1.size();
+        int p2_size = p2.size();
         List<KGramPostingsEntry> entrys = new ArrayList();
         
         while (true) {
@@ -72,29 +74,29 @@ public class KGramIndex {
             KGramPostingsEntry t_entry2 = p2.get(pp2);
             if (t_entry1.tokenID == t_entry2.tokenID) {
                 entrys.add(p1.get(pp1));
-                if (pp1 < p1.size() - 1) {
+                if (pp1 < p1_size - 1) {
                     pp1++;
                 }
-                if (pp2 < p2.size() - 1) {
+                if (pp2 < p2_size - 1) {
                     pp2++;
                 }
                 
             } else if (t_entry1.tokenID > t_entry2.tokenID) {
-                if (pp2 < p2.size() - 1) {
+                if (pp2 < p2_size - 1) {
                     pp2++;
                 } else {
                     break;
                 }
                 
             } else {
-                if (pp1 < p1.size() - 1) {
+                if (pp1 < p1_size - 1) {
                     pp1++;
                 } else {
                     break;
                 }
             }
             
-            if ((pp1 == p1.size() - 1) && (pp2 == p2.size() - 1)) {
+            if ((pp1 == p1_size - 1) && (pp2 == p2_size - 1)) {
                 break;
             }
         }
@@ -120,24 +122,30 @@ public class KGramIndex {
         id2term.put(id, token);
         term2id.put(token, id);
         
+        KGramPostingsEntry newEntry = new KGramPostingsEntry(id);
         String donoted_token = "^" + token + "$";
+//        StringBuilder donoted_token = new StringBuilder();
+//        donoted_token.append("^");
+//        donoted_token.append(token);
+//        donoted_token.append("$");
 //        String donoted_token = token;
-        for (int i = 0; i < donoted_token.length() - K + 1; i++) {
+        int numOfGrams = donoted_token.length() - K + 1;
+        newEntry.numOfKGrams = numOfGrams;
+
+        for (int i = 0; i < numOfGrams; i++) {
             String t_kgram = donoted_token.substring(i, i + K);
-            
-            
             List<KGramPostingsEntry> entrys = index.get(t_kgram);
+            
             if (entrys != null) {
                 // If this gram is already in the k-gram index
                 // a k-gram may occur more than once in a token
-                KGramPostingsEntry newEntry = new KGramPostingsEntry(id);
                 if (!entrys.contains(newEntry)) {
                     entrys.add(newEntry);
                 }
             } else {
                 // or if not
                 entrys = new ArrayList();
-                entrys.add(new KGramPostingsEntry(id));
+                entrys.add(newEntry);
                 index.put(t_kgram, entrys);
             }
         }

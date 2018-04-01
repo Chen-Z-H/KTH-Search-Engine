@@ -115,6 +115,7 @@ public class Query {
 	//
 	//  YOUR CODE HERE
 	//
+        
         // Notation: The lengths of the results and docIsRelevant are not equal.
         
         // Used to get idf and tf of documents

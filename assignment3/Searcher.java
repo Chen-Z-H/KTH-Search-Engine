@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,6 +72,7 @@ public class Searcher {
              */
             String donoted_token = "^" + qt.term + "$"; // for the later matching by regex
             String[] strs = donoted_token.split("\\*");
+
             for (String str: strs) {
                 /**
                  * In case the length of any part of the query word is smaller than K,
@@ -91,10 +93,8 @@ public class Searcher {
             ArrayList<QueryTerm> disjunctions = new ArrayList();
             for (KGramPostingsEntry entry: entrys) {
                 String term = kgIndex.getTermByID(entry.tokenID);
-//                System.out.println("All: " + term);
                 if (p.matcher(term).matches()) {
                     disjunctions.add(query.new QueryTerm(term, weight));
-//                    System.out.println("Match: " + term);
                 }
             }
             possible_tokens.add(disjunctions);
@@ -127,8 +127,8 @@ public class Searcher {
 //        System.out.println("All possible combinations: " + query_combination.size());
         
         PostingsList ret = null;
-        for (ArrayList<QueryTerm> terms: query_combination) {
-            query.queryterm = terms;
+        for (int i = query_combination.size() - 1; i >= 0; i--) {
+            query.queryterm = query_combination.get(i);
             PostingsList postingsList = null;
             switch(queryType) {
                 case INTERSECTION_QUERY:
@@ -159,14 +159,11 @@ public class Searcher {
                 // Merge the score for ranked search
                 if (ret == null) {
                     ret = postingsList;
-//                    ArrayList<PostingsEntry> entrylist1 = ret.getList();
-//                    for (int i = 0; i < entrylist1.size(); i++) {
-//                        entrylist1.get(i).score /= query_combination.size();
-//                    } 
                 } else {
                     ArrayList<PostingsEntry> entrylist1 = ret.getList();
                     ArrayList<PostingsEntry> entrylist2 = postingsList.getList();
-                    for (PostingsEntry tempEntry: entrylist2) {
+                    for (int j = entrylist2.size() - 1; j >= 0 ; j--) {
+                    PostingsEntry tempEntry = entrylist2.get(j);
                         // The result set returned by each query may have different length
                         int index = entrylist1.indexOf(tempEntry);
                         if (index != -1) {
@@ -175,11 +172,13 @@ public class Searcher {
                             entrylist1.add(tempEntry);
                         }
                     }
-//                    Collections.sort(ret.getList());
+                    
                 }
             }
             
         }
+
+//        System.out.println("Time (hit): " + time1 / 1000 + ", Time (miss): " + time2 / 1000 + ", Miss: " + miss);
         
         if (queryType == QueryType.RANKED_QUERY) {
             Collections.sort(ret.getList());
@@ -190,7 +189,8 @@ public class Searcher {
     
     private PostingsList mergePostingsList(PostingsList plist1, PostingsList plist2) {
         ArrayList<PostingsEntry> list = plist2.getList();
-        for (PostingsEntry entry: list) {
+        for (int i = list.size() - 1; i >= 0; i--) {
+            PostingsEntry entry = list.get(i);
             if (!plist1.contains(entry)) {
                 plist1.addEntry(entry);
             }
@@ -400,7 +400,7 @@ public class Searcher {
             
             //System.out.println(curToken + ": " + idf);
             
-            for (int j = 0; j < tList.size(); j++) {
+            for (int j = tList.size() - 1; j >= 0; j--) {
                 PostingsEntry t_entry = tList.get(j);
                 if (entrys.containsKey(t_entry.docID)) {
                     entrys.get(t_entry.docID).score += 
@@ -413,14 +413,13 @@ public class Searcher {
             uniqueToken.add(curToken);
         }
         
-        double eFactor = 0.001;
-        if (rankingType == RankingType.TF_IDF) {
-            eFactor = 1;
-        } else if (rankingType == RankingType.PAGERANK) {
-            eFactor = 0;
-        }
+//        double eFactor = 0.001;
+//        if (rankingType == RankingType.TF_IDF) {
+//            eFactor = 1;
+//        } else if (rankingType == RankingType.PAGERANK) {
+//            eFactor = 0;
+//        }
 //        System.out.println("Factor: " + eFactor);
-        
         for (int docID: entrys.keySet()) {
             // divided by the length of the document, this score is tf-idf score
             entrys.get(docID).score /= index.docLengths.get(docID);
@@ -430,7 +429,7 @@ public class Searcher {
         
         //convert Hashmap to ArrayList and sort the documents based on the scores
         ArrayList<PostingsEntry> list = new ArrayList(entrys.values());
-        Collections.sort(list);
+//        Collections.sort(list);
         postingsList.setEntrys(list);
         
         //save the top 50 ranked file names to files (for task 2.4)

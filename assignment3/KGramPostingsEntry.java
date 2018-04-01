@@ -10,6 +10,7 @@ package ir;
 
 public class KGramPostingsEntry {
 	int tokenID;
+        int numOfKGrams;
 
 	public KGramPostingsEntry(int tokenID) {
 		this.tokenID = tokenID;

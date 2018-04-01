@@ -40,6 +40,7 @@ public class HashedIndex implements Index {
             postingList = new PostingsList();
             postingList.addDocOff(docID, offset);
             index.put(token, postingList);
+            kgIndex.insert(token);
         } else {
 //            PostingsEntry entry = postingList.getEntry(docID);
 //            if (entry == null) {
@@ -51,7 +52,6 @@ public class HashedIndex implements Index {
 //            }
             postingList.addDocOff(docID, offset);
         }
-        kgIndex.insert(token);
     }
 
 
