@@ -134,6 +134,9 @@ public class SpellChecker {
         int K = kgIndex.getK();
         // For one-word query, we get the first term in queryterm directly
         String qterm = query.queryterm.get(0).term;
+        if (qterm.contains("*")) {
+            return null;
+        }
         
         // All the survived corrections in ArrayList
         ArrayList<KGramStat> corrections = new ArrayList();
@@ -144,17 +147,20 @@ public class SpellChecker {
         
         // Extract all the k-grams from the query
         String donoted_token = "^" + qterm + "$";
-        for (int i = 0; i < donoted_token.length() - K + 1; i++) {
+        int numOfQueryGram = donoted_token.length() - K + 1;
+        for (int i = 0; i < numOfQueryGram; i++) {
             String t_kgram = donoted_token.substring(i, i + K);
             query_kgrams.add(t_kgram);
         }
 
         int sizeA = query_kgrams.size();
-        for (String t_kgram: query_kgrams) {
+        for (int i = 0; i < numOfQueryGram; i++) {
+            String t_kgram = query_kgrams.get(i);
             List<KGramPostingsEntry> kGramEntries = kgIndex.getPostings(t_kgram);
             if (kGramEntries != null) {
                 // For each term that contains t_kgram
-                for (KGramPostingsEntry entry: kGramEntries) {
+                for (int j = kGramEntries.size() - 1; j >= 0; j--) {
+                    KGramPostingsEntry entry = kGramEntries.get(j);
                     String alter_term = kgIndex.getTermByID(entry.tokenID);
                     
                     if (added_terms.contains(alter_term)) {  // This term is recorded before
@@ -164,7 +170,8 @@ public class SpellChecker {
                     
                     String denoted_alter_gram = "^" + alter_term + "$";
                     int intersection = 0;   // Size of A intersects B
-                    for (String tt_kgram: query_kgrams) {
+                    for (int k = 0; k < numOfQueryGram; k++) {
+                        String tt_kgram = query_kgrams.get(k);
                         if (denoted_alter_gram.contains(tt_kgram)) {
                             intersection++;
                         }
@@ -188,9 +195,9 @@ public class SpellChecker {
 //        System.out.println("Number of alternatives: " + corrections.size());
         Collections.sort(corrections);
         
-        int numOfSurvived = corrections.size();
-        String[] ret = new String[numOfSurvived];
-        for (int i = 0; i < numOfSurvived; i++) {
+        int numOfReturn = (corrections.size()<limit)?corrections.size():limit;
+        String[] ret = new String[numOfReturn];
+        for (int i = 0; i < numOfReturn; i++) {
             ret[i] = corrections.get(i).getToken();
         }
         
@@ -206,6 +213,12 @@ public class SpellChecker {
         //
         // YOUR CODE HERE
         //
+        double returnedRate = 0.2;
+        int numOfQueryTerms = qCorrections.size();
+        
+        for (int i = 0; i < numOfQueryTerms; i++) {
+            
+        }
         return null;
     }
 }

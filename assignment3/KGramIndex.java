@@ -58,10 +58,10 @@ public class KGramIndex {
             return new ArrayList();
         }
         if (p1.isEmpty()) {
-            return p2;
+            return p1;
         }
         if (p2.isEmpty()) {
-            return p1;
+            return p2;
         }
         
         int pp1 = 0, pp2 = 0;
@@ -123,7 +123,7 @@ public class KGramIndex {
         term2id.put(token, id);
         
         KGramPostingsEntry newEntry = new KGramPostingsEntry(id);
-        String donoted_token = "^" + token + "$";
+        String donoted_token = "^".concat(token).concat("$");
 //        StringBuilder donoted_token = new StringBuilder();
 //        donoted_token.append("^");
 //        donoted_token.append(token);

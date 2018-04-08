@@ -14,7 +14,7 @@ import java.util.StringTokenizer;
 import java.io.Serializable;
 import java.lang.Math;
 
-public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
+public class PostingsEntry implements Comparable<PostingsEntry>, Serializable, Cloneable{
     
     public int docID;
     public double score = 0;
@@ -105,5 +105,10 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

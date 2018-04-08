@@ -82,7 +82,11 @@ public class Searcher {
                     for (int i = 0; i < str.length() - K + 1; i++) {
                         String t_kgram = str.substring(i, i + K);
 //                        System.out.println("K-gram: " + t_kgram);
-                        entrys = kgIndex.intersect(entrys, kgIndex.getPostings(t_kgram));
+                        if (entrys.isEmpty()) {
+                            entrys = kgIndex.getPostings(t_kgram);
+                        } else {
+                            entrys = kgIndex.intersect(entrys, kgIndex.getPostings(t_kgram));
+                        }
 //                        System.out.println(entrys.size());
                     }
                 }
@@ -163,7 +167,7 @@ public class Searcher {
                     ArrayList<PostingsEntry> entrylist1 = ret.getList();
                     ArrayList<PostingsEntry> entrylist2 = postingsList.getList();
                     for (int j = entrylist2.size() - 1; j >= 0 ; j--) {
-                    PostingsEntry tempEntry = entrylist2.get(j);
+                        PostingsEntry tempEntry = entrylist2.get(j);
                         // The result set returned by each query may have different length
                         int index = entrylist1.indexOf(tempEntry);
                         if (index != -1) {

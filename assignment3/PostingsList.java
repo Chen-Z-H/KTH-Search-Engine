@@ -139,4 +139,5 @@ public class PostingsList implements Comparable<PostingsList> {
         ret.append("\r\n");
         return ret.toString();
     }
+    
 }
