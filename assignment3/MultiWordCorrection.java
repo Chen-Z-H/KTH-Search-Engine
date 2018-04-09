@@ -15,18 +15,18 @@ import java.util.List;
 public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
     
     // The current query combination
-    private ArrayList<String> words = null;
+    private List<String> words = null;
     
     // The search results of the current search combination
-    private ArrayList<PostingsEntry> entrys = null;
+    private List<PostingsEntry> entrys = null;
 
-    public MultiWordCorrection(ArrayList<String> words, ArrayList<PostingsEntry> entrys) {
+    public MultiWordCorrection(List<String> words, List<PostingsEntry> entrys) {
         this.words = words;
         this.entrys = entrys;
     }
     
-    public MultiWordCorrection(ArrayList<String> words, 
-            ArrayList<PostingsEntry> entrys1, ArrayList<PostingsEntry> entrys2) {
+    public MultiWordCorrection(List<String> words, 
+            ArrayList<PostingsEntry> entrys1, List<PostingsEntry> entrys2) {
         this.words = words;
         this.entrys = merge(entrys1, entrys2);
     }
@@ -38,10 +38,10 @@ public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
      * @return A new MultiWordCorrection object.
      */
     public MultiWordCorrection getNewCorrection(String word, ArrayList<PostingsEntry> tEntrys) {
-        ArrayList<String> newWords = (ArrayList)words.clone();
+        ArrayList<String> newWords = (ArrayList)((ArrayList)words).clone();
         newWords.add(word);
         
-        ArrayList<PostingsEntry> newEntrys = merge(entrys, tEntrys); // deep copy
+        List<PostingsEntry> newEntrys = merge(entrys, tEntrys); // deep copy
         return new MultiWordCorrection(newWords, newEntrys);
     }
     
@@ -51,7 +51,7 @@ public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
      * @param p2
      * @return The merged entrys list.
      */
-    private ArrayList<PostingsEntry> merge(ArrayList<PostingsEntry> p1, ArrayList<PostingsEntry> p2) {
+    private List<PostingsEntry> merge(List<PostingsEntry> p1, List<PostingsEntry> p2) {
         if (p1 == null || p2 == null) {
             return new ArrayList();
         }
@@ -106,9 +106,10 @@ public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
      * Return the size of search results by the current query words
      * @return 
      */
-    public double size() {
+    public int size() {
         return entrys.size();
     }
+    
     
     /**
      * The sorting criteria is the number of documents that can be returned by the current search,
@@ -117,6 +118,24 @@ public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
     @Override
     public int compareTo( MultiWordCorrection other ) {
 	return Double.compare( other.size(), size() );
+    }
+    
+    @Override
+    public String toString() {
+        String str = "";
+        for (String tWord: words) {
+            str += (tWord + " ");
+        }
+        return str;
+    }
+    
+    
+    public ArrayList<String> getWordsCopy() {
+        return (ArrayList)((ArrayList)words).clone();
+    }
+
+    public void setWords(ArrayList<String> words) {
+        this.words = words;
     }
     
 }

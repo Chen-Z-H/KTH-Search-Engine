@@ -6,6 +6,7 @@
 package ir;
 
 import java.util.Stack;
+import java.util.List;
 import java.util.ArrayList;
 
 /**
@@ -21,14 +22,14 @@ public class Combination {
      * @param stack A stack structrue used for combination algorithm
      * @param ret   All the combinations we get from this method
      */
-    public static <T> void getCombination(ArrayList<ArrayList<T>> list, int N, 
-            Stack<T> stack, ArrayList<ArrayList<T>> ret) {
+    public static <T> void getCombination(List<List<T>> list, int N, 
+            Stack<T> stack, List<List<T>> ret) {
         for (int i = 0; i < list.get(N).size(); i++) {
             stack.push(list.get(N).get(i));
             if (N < list.size() - 1) {
                 getCombination(list, N + 1, stack, ret);
             } else {
-                ArrayList<T> result = new ArrayList(stack);
+                List<T> result = new ArrayList(stack);
                 ret.add(result);
             }
             stack.pop();

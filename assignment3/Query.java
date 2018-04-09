@@ -115,6 +115,9 @@ public class Query {
 	//
 	//  YOUR CODE HERE
 	//
+        if (results.getList().isEmpty()) {
+            return;
+        }
         
         // Notation: The lengths of the results and docIsRelevant are not equal.
         

@@ -103,6 +103,8 @@ public class PostingsList implements Comparable<PostingsList> {
     public void clear() {
         list.clear();
     }
+    
+        
 
     /**
      * 

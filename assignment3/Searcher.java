@@ -44,13 +44,13 @@ public class Searcher {
      * @param query
      * @return The query after processed
      */
-    private ArrayList<ArrayList<QueryTerm>> preprocessQuery(Query query) {
+    private List<List<QueryTerm>> preprocessQuery(Query query) {
         KGramIndex kgIndex = ((HashedIndex)index).getKgIndex();
         int K = kgIndex.getK();
         // Store all the possible combinations of query words
-        ArrayList<ArrayList<QueryTerm>> combinations = new ArrayList();
+        List<List<QueryTerm>> combinations = new ArrayList();
         // Each list in this contains all possible tokens for each wilfcard query word
-        ArrayList<ArrayList<QueryTerm>> possible_tokens = new ArrayList();
+        List<List<QueryTerm>> possible_tokens = new ArrayList();
         
         ArrayList<QueryTerm> qterm = query.queryterm;
         
@@ -125,14 +125,14 @@ public class Searcher {
 	//
 //        System.out.println("Starting preprocessing...");
 //        long startTime = System.currentTimeMillis();
-        ArrayList<ArrayList<QueryTerm>> query_combination = preprocessQuery(query);
+        List<List<QueryTerm>> query_combination = preprocessQuery(query);
 //        System.out.println("Preprocessing is over.");
 //        long elapsedTime = System.currentTimeMillis() - startTime;
 //        System.out.println("All possible combinations: " + query_combination.size());
         
         PostingsList ret = null;
         for (int i = query_combination.size() - 1; i >= 0; i--) {
-            query.queryterm = query_combination.get(i);
+            query.queryterm = (ArrayList)query_combination.get(i);
             PostingsList postingsList = null;
             switch(queryType) {
                 case INTERSECTION_QUERY:
@@ -146,7 +146,7 @@ public class Searcher {
                     postingsList = phraseSearch(query);
                     break;
                 case RANKED_QUERY:
-                    postingsList = rankedSearch(query, rankingType);
+                    postingsList = rankedSearch(query, rankingType);       
                     break;
                 default:
                     break;
@@ -176,7 +176,8 @@ public class Searcher {
                             entrylist1.add(tempEntry);
                         }
                     }
-                    
+//                    ret = union(ret, postingsList);
+//                    System.out.println(ret.size());
                 }
             }
             
@@ -254,19 +255,24 @@ public class Searcher {
                 } else if (pl1.get(p1).docID > pl2.get(p2).docID) {
                     if (p2 < pl2.size() - 1) {
                         p2++;
-                    } else {
+                    } else if (p1 < pl1.size() - 1){
                         p1++;
                     }
                 } else {
                     if (p1 < pl1.size() - 1) {
                         p1++;
-                    } else {
+                    } else if (p2 < pl2.size() - 1) {
                         p2++;
                     }
                 }
                 if (p1 >= (pl1.size() - 1) && p2 >= (pl2.size() - 1)) {
-                    if (pl1.get(p1).equals(pl2.get(p2))) {
-                        postingsList.addEntry(pl1.get(p1));
+                    try {
+                        if (pl1.get(p1).equals(pl2.get(p2))) {
+                            postingsList.addEntry(pl1.get(p1));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Size1: " + pl1.size() + ", index1: " + p1);
+                        System.err.println("Size2: " + pl2.size() + ", index2: " + p2);
                     }
                     break;
                 }
@@ -282,7 +288,11 @@ public class Searcher {
             }
         }
         
-        return postingsList;
+        if (postingsList.getList().isEmpty()) {
+            return null;
+        } else {
+            return postingsList;
+        }
     }
     
     /**
@@ -463,6 +473,60 @@ public class Searcher {
     }
     
     
+    private PostingsList union(PostingsList p1, PostingsList p2) {
+//        if (p1.size() == 0) {
+//            return p2;
+//        }
+//        if (p2.size() == 0) {
+//            return p1;
+//        }
+        PostingsList result = new PostingsList();
+        int i = 0, j = 0;
+        
+        ArrayList<PostingsEntry> pp1 = p1.getList();
+        ArrayList<PostingsEntry> pp2 = p2.getList();
+        int p1_size = pp1.size();
+        int p2_size = pp2.size();
+        
+        while(true){
+            PostingsEntry entry1 = pp1.get(i);
+            PostingsEntry entry2 = pp2.get(j);
+            if (entry1.docID == entry2.docID) {                
+                PostingsEntry entry = new PostingsEntry(entry1.docID, entry1.score + entry2.score);              
+                result.addEntry(entry);  
+                
+                if (i < p1_size - 1) {
+                    i++;
+                }
+                if (j < p2_size - 1) {
+                    j++;
+                }
+                
+            } else if (entry1.docID > entry2.docID){
+                result.addEntry(entry2);      
+                if (j < p2_size - 1) {
+                    j++;
+                } else {
+                    break;
+                }
+            } else {
+                result.addEntry(entry1);
+                if (i < p1_size - 1) {
+                    i++;
+                } else {
+                    break;
+                }
+            }
+            
+            if ((i == p1_size - 1) && (j == p2_size - 1)) {
+                break;
+            }
+
+        }
+//        System.out.println("com");
+
+        return result;
+    }
     
     /**
      * Mapping from file docID to pagerank
