@@ -115,6 +115,9 @@ public class Query {
 	//
 	//  YOUR CODE HERE
 	//
+        if (results == null) {
+            return;
+        }
         if (results.getList().isEmpty()) {
             return;
         }

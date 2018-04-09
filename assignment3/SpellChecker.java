@@ -20,6 +20,8 @@ public class SpellChecker {
 
     /** K-gram index to be used by the spell checker */
     KGramIndex kgIndex;
+    
+    private int m[][] = new int[1000][1000];
 
     /** The auxiliary class for containing the value of your ranking function for a token */
     class KGramStat implements Comparable {
@@ -102,7 +104,6 @@ public class SpellChecker {
         //
         int s1_len = s1.length() + 1;
         int s2_len = s2.length() + 1;
-        int m[][] = new int[s1_len][s2_len];
         
         for (int i = 0; i < s1_len; i++) {
             m[i][0] = i;
@@ -159,7 +160,7 @@ public class SpellChecker {
         ArrayList<String> added_terms = new ArrayList();
         
         // Extract all the k-grams from the query
-        String donoted_token = "^" + qterm + "$";
+        String donoted_token = "^".concat(qterm).concat("$");
         int numOfQueryGram = donoted_token.length() - K + 1;
         for (int i = 0; i < numOfQueryGram; i++) {
             String t_kgram = donoted_token.substring(i, i + K);
@@ -181,7 +182,7 @@ public class SpellChecker {
                     }
                     added_terms.add(alter_term);
                     
-                    String denoted_alter_gram = "^" + alter_term + "$";
+                    String denoted_alter_gram = "^".concat(alter_term).concat("$");
                     int intersection = 0;   // Size of A intersects B
                     for (int k = 0; k < numOfQueryGram; k++) {
                         String tt_kgram = query_kgrams.get(k);
@@ -218,6 +219,8 @@ public class SpellChecker {
     }
 
     private String[] multiWordCheck(Query query, int limit) {
+        long startTime = System.currentTimeMillis();
+        
         int K = kgIndex.getK();
         List<List<KGramStat>> qCorrections = new ArrayList();
         // For each query word, get its candidate list, and try to merge them
@@ -237,7 +240,7 @@ public class SpellChecker {
             ArrayList<String> added_terms = new ArrayList();
 
             // Extract all the k-grams from the query
-            String donoted_token = "^" + qterm + "$";
+            String donoted_token = "^".concat(qterm).concat("$");
             int numOfQueryGram = donoted_token.length() - K + 1;
             for (int i = 0; i < numOfQueryGram; i++) {
                 String t_kgram = donoted_token.substring(i, i + K);
@@ -245,13 +248,18 @@ public class SpellChecker {
             }
 
             int sizeA = query_kgrams.size();
+            // For each k-gram in the query word
             for (int i = 0; i < numOfQueryGram; i++) {
                 String t_kgram = query_kgrams.get(i);
+                // Get the list of tokens that contain this k-gram
                 List<KGramPostingsEntry> kGramEntries = kgIndex.getPostings(t_kgram);
                 if (kGramEntries != null) {
                     // For each term that contains t_kgram
                     for (int j = kGramEntries.size() - 1; j >= 0; j--) {
                         KGramPostingsEntry entry = kGramEntries.get(j);
+                        if (entry.numOfKGrams - sizeA > 6) {
+                            continue;
+                        }
                         String alter_term = kgIndex.getTermByID(entry.tokenID);
 
                         if (added_terms.contains(alter_term)) {  // This term is recorded before
@@ -259,11 +267,10 @@ public class SpellChecker {
                         }
                         added_terms.add(alter_term);
 
-                        String denoted_alter_gram = "^" + alter_term + "$";
+                        String denoted_alter_gram = "^".concat(alter_term).concat("$");
                         int intersection = 0;   // Size of A intersects B
                         for (int k = 0; k < numOfQueryGram; k++) {
-                            String tt_kgram = query_kgrams.get(k);
-                            if (denoted_alter_gram.contains(tt_kgram)) {
+                            if (denoted_alter_gram.contains(query_kgrams.get(k))) {
                                 intersection++;
                             }
                         }
@@ -273,7 +280,8 @@ public class SpellChecker {
                             // Now filter the survived terms with edit distance
                             if (editDistance(qterm, alter_term) <= MAX_EDIT_DISTANCE) {
                                 // I use the number of documents that this term occurs in as its score
-                                corrections.add(new KGramStat(alter_term, index.getPostings(alter_term).size()));
+                                corrections.add(new KGramStat(alter_term, 0));
+//                                System.err.println(qterm + " -> " + alter_term);
                             }
                         }
                     }
@@ -285,7 +293,13 @@ public class SpellChecker {
             qCorrections.add(corrections);
         }
         
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        System.err.println("Correction time: " + elapsedTime / 1000);
+        
+        startTime = System.currentTimeMillis();
         List<KGramStat> retCorrections = mergeCorrections(qCorrections, limit);
+        elapsedTime = System.currentTimeMillis() - startTime;
+        System.err.println("Merge time: " + elapsedTime / 1000);
         
         int numOfReturn = (retCorrections.size()<limit)?retCorrections.size():limit;
         String[] ret = new String[numOfReturn];
@@ -318,6 +332,7 @@ public class SpellChecker {
         // Get all the combinations of the first two query terms
         List<List<KGramStat>> combinations = new ArrayList();
         Combination.getCombination(candidates, 0, new Stack(), combinations);
+
         // For each combination, do a intersection query
         for (int i = combinations.size() - 1; i >= 0; i--) {
             List<KGramStat> tKGram = combinations.get(i);
@@ -336,34 +351,37 @@ public class SpellChecker {
         int retSize = (corrections.size()>limit)?limit:corrections.size();
         corrections = corrections.subList(0, retSize);
         
-        ArrayList<MultiWordCorrection> tCorrections = null;
-        // If the query has more than two words
-        for (int i = 2; i < numOfQueryTerms; i++) {
-            ArrayList<KGramStat> tGramList = (ArrayList)qCorrections.get(i);
-            int newCorrectionsSize = tGramList.size();
-            int preCorrectionsSize = corrections.size();
-            tCorrections = new ArrayList();
-            // For each in the previous corrections
-            for (int j = 0; j < preCorrectionsSize; j++) {
-                // The previously stored correction
-                MultiWordCorrection tpCorrection = corrections.get(j);
-                // For each correction of the new word
-                for (int k = 0; k < newCorrectionsSize; k++) {
-//                    ArrayList<String> tWords = tpCorrection.getWordsCopy();
-//                    tWords.add(tGramList.get(k).getToken());
-                    String tToken = tGramList.get(k).getToken();
-                    tCorrections.add(tpCorrection.getNewCorrection(tToken, index.getPostings(tToken).getList()));
+        if (numOfQueryTerms > 2) {
+            ArrayList<MultiWordCorrection> tCorrections = null;
+            // If the query has more than two words
+            for (int i = 2; i < numOfQueryTerms; i++) {
+                ArrayList<KGramStat> tGramList = (ArrayList)qCorrections.get(i);
+                int newCorrectionsSize = tGramList.size();
+                int preCorrectionsSize = corrections.size();
+                tCorrections = new ArrayList();
+                // For each in the previous corrections
+                for (int j = 0; j < preCorrectionsSize; j++) {
+                    // The previously stored correction
+                    MultiWordCorrection tpCorrection = corrections.get(j);
+                    // For each correction of the new word
+                    for (int k = 0; k < newCorrectionsSize; k++) {
+    //                    ArrayList<String> tWords = tpCorrection.getWordsCopy();
+    //                    tWords.add(tGramList.get(k).getToken());
+                        String tToken = tGramList.get(k).getToken();
+                        tCorrections.add(tpCorrection.getNewCorrection(tToken, index.getPostings(tToken).getList()));
+                    }
+
                 }
-                
+                Collections.sort(tCorrections);
+                // Cut the list to save time
+                retSize = (tCorrections.size()>limit)?limit:tCorrections.size();
+                corrections = tCorrections.subList(0, retSize);
             }
-            Collections.sort(tCorrections);
-            // Cut the list to save time
-            retSize = (tCorrections.size()>limit)?limit:tCorrections.size();
-            corrections = tCorrections.subList(0, retSize);
+
+            // Sort based on their scores
+            Collections.sort(corrections);
         }
         
-        // Sort based on their scores
-        Collections.sort(corrections);
         // Convert the MultiWordCorrection to Strings
         int ret_size = (corrections.size()>limit)?limit:corrections.size();
         for (int i = 0; i < ret_size; i++) {

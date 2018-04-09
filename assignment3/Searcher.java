@@ -70,7 +70,7 @@ public class Searcher {
              * Now we extract all the k-grams from the word
              * and get all possible tokens of it
              */
-            String donoted_token = "^" + qt.term + "$"; // for the later matching by regex
+            String donoted_token = "^".concat(qt.term).concat("$"); // for the later matching by regex
             String[] strs = donoted_token.split("\\*");
 
             for (String str: strs) {
@@ -176,8 +176,7 @@ public class Searcher {
                             entrylist1.add(tempEntry);
                         }
                     }
-//                    ret = union(ret, postingsList);
-//                    System.out.println(ret.size());
+
                 }
             }
             
