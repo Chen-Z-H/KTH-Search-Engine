@@ -20,6 +20,8 @@ public class HashedIndex implements Index {
 
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    
+    public HashMap<Integer, HashMap<String, Boolean>> docIndex = new HashMap();
 
 
     private KGramIndex kgIndex = new KGramIndex(2);
@@ -42,15 +44,15 @@ public class HashedIndex implements Index {
             index.put(token, postingList);
             kgIndex.insert(token);
         } else {
-//            PostingsEntry entry = postingList.getEntry(docID);
-//            if (entry == null) {
-//                entry = new PostingsEntry(docID);
-//                entry.addOffset(offset);
-//                postingList.addEntry(entry);
-//            } else {
-//                entry.addOffset(offset);
-//            }
             postingList.addDocOff(docID, offset);
+        }
+        
+        if (docIndex.containsKey(docID)) {
+            docIndex.get(docID).put(token, true);
+        } else {
+            HashMap<String, Boolean> tMap = new HashMap();
+            tMap.put(token, true);
+            docIndex.put(docID, tMap);
         }
     }
 

@@ -9,6 +9,7 @@ package ir;
 
 import java.util.ArrayList;
 import java.io.File;
+import java.util.List;
 
 /**
  *  This is the main class for the search engine.
@@ -87,6 +88,19 @@ public class Engine {
         } else {
             gui.displayInfoText( "Index is loaded from disk" );
         }
+        
+        KGramIndex kgIndex = ((HashedIndex)index).getKgIndex();
+        List<KGramPostingsEntry> ve = kgIndex.getPostings("ve");
+        System.err.println("The first 10 of them are (ve):");
+        for (int i = 0; i < 10; i++) {
+            System.err.println(kgIndex.getTermByID(ve.get(i).tokenID));
+        }
+        
+        List<KGramPostingsEntry> thhe = kgIndex.intersect(kgIndex.getPostings("th"), kgIndex.getPostings("he"));
+        System.err.println("The first 10 of them are (th he):");
+        for (int i = 0; i < 10; i++) {
+            System.err.println(kgIndex.getTermByID(thhe.get(i).tokenID));
+        }
     }
 
 
@@ -139,6 +153,7 @@ public class Engine {
 
     public static void main( String[] args ) {
 	Engine e = new Engine( args );
+        
     }
 
 }

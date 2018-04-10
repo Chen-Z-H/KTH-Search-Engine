@@ -347,10 +347,12 @@ public class SpellChecker {
             corrections.add(new MultiWordCorrection(words, tList.getList()));
         }
         
+        // Sort the combinations based on the number of search results, and cut off some combinations
         Collections.sort(corrections);
         int retSize = (corrections.size()>limit)?limit:corrections.size();
         corrections = corrections.subList(0, retSize);
         
+        // Noe handle the rest of the query terms
         if (numOfQueryTerms > 2) {
             ArrayList<MultiWordCorrection> tCorrections = null;
             // If the query has more than two words

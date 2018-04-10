@@ -12,6 +12,8 @@ import java.util.StringTokenizer;
 import java.util.Iterator;
 import java.nio.charset.*;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -122,69 +124,93 @@ public class Query {
             return;
         }
         
+        double alpha = this.alpha / (double)queryterm.size();
+        HashMap<String, Boolean> queryIdentifier = new HashMap();
+        
+        for (QueryTerm tTerm: queryterm) {
+            tTerm.weight = alpha;
+            queryIdentifier.put(tTerm.term, true);
+        }
+        
         // Notation: The lengths of the results and docIsRelevant are not equal.
         
         // Used to get idf and tf of documents
         Index hashedIndex = engine.index;
-        // A array used to store all the relevant document vectors
-        ArrayList<ArrayList<Double>> relDocs = new ArrayList();
-        // compute the idfs of all the dicuments and store them in a array
-        double[] idf = new double[size()];
-        for (int i = 0; i < size(); i++) {
-            PostingsList tmp_list = hashedIndex.getPostings(queryterm.get(i).term);
-            idf[i] = (tmp_list==null)?0:tmp_list.size();
-        }
+        HashMap<Integer, HashMap<String, Boolean>> docIndex = ((HashedIndex)hashedIndex).docIndex;
         
         int index = 0;
         for (PostingsEntry tEntry: results.getList()) {
             if (docIsRelevant[index]) {
-                // now we create a weight vector for each relevant document,
-                // we take a differnet implementation compared to Searcher class
-                ArrayList<Double> doc = new ArrayList();
-                for (int i = 0; i < size(); i++) {
-//                    System.out.println("DocID: " + tEntry.docID);
-                    double tf = hashedIndex.getPostings(queryterm.get(i).term).getTermFrequency(tEntry.docID);
-                    // The normalized tf-idf value
-                    doc.add(tf * idf[i] / hashedIndex.docLengths.get(tEntry.docID));
+                HashMap<String, Boolean> tMap = docIndex.get(tEntry.docID);
+                int size_doc = tMap.size();
+                double beta = this.beta / (double)size_doc;
+                Iterator iter = tMap.entrySet().iterator();
+                while (iter.hasNext()) {
+                    Map.Entry entry = (Map.Entry) iter.next();
+                    String token = (String)entry.getKey();
+                    if (!queryIdentifier.containsKey(token)) {
+                        queryIdentifier.put(token, true);
+                        queryterm.add(new QueryTerm(token, beta));
+                    }
                 }
-                relDocs.add(doc);
+                
             }
+            
             index++;
             if (index >= docIsRelevant.length) {
                 break;
             }
         }
         
-        // The user doesn't give any feedback
-        if (relDocs.isEmpty()) {
-            System.out.println("No feedback.");
-            return;
-        }
-        
-        // now update the weights of the terms
-        index = 0;
-        for (QueryTerm keyword: queryterm) {
-            double sum = 0;
-            for (int i = 0; i < relDocs.size(); i++) {
-                sum += relDocs.get(i).get(index);
-            }
-            sum /= relDocs.size();
-//            System.out.println("Sum: " + sum);
-            
-//            if (keyword.weight == 1) {
-//                // We only consider the term frequency for query vector for now
-//                keyword.weight = alpha * getTfInQuery(keyword.term) / queryterm.size() + beta * sum;
-//            } else {
-//                // Some problem may be with the following sentence, unreasonable to judge if it is the first query 
-//                // by comparing its weight with 1
-//                keyword.weight = alpha * keyword.weight / queryterm.size() + beta * sum;
+//        // A array used to store all the relevant document vectors
+//        ArrayList<ArrayList<Double>> relDocs = new ArrayList();
+//        // compute the idfs of all the dicuments and store them in a array
+//        double[] idf = new double[size()];
+//        for (int i = 0; i < size(); i++) {
+//            PostingsList tmp_list = hashedIndex.getPostings(queryterm.get(i).term);
+//            idf[i] = (tmp_list==null)?0:tmp_list.size();
+//        }
+//        
+//        int index = 0;
+//        for (PostingsEntry tEntry: results.getList()) {
+//            if (docIsRelevant[index]) {
+//                // now we create a weight vector for each relevant document,
+//                // we take a differnet implementation compared to Searcher class
+//                ArrayList<Double> doc = new ArrayList();
+//                for (int i = 0; i < size(); i++) {
+////                    System.out.println("DocID: " + tEntry.docID);
+//                    double tf = hashedIndex.getPostings(queryterm.get(i).term).getTermFrequency(tEntry.docID);
+//                    // The normalized tf-idf value
+//                    doc.add(tf * idf[i] / hashedIndex.docLengths.get(tEntry.docID));
+//                }
+//                relDocs.add(doc);
 //            }
-            keyword.weight = alpha * getTfInQuery(keyword.term) / queryterm.size() + beta * sum;
-
-            System.out.print(keyword.term + ": " + keyword.weight + " ");
-            index++;
-        }
-        System.out.println();
+//            index++;
+//            if (index >= docIsRelevant.length) {
+//                break;
+//            }
+//        }
+//        
+//        // The user doesn't give any feedback
+//        if (relDocs.isEmpty()) {
+//            System.out.println("No feedback.");
+//            return;
+//        }
+//        
+//        // now update the weights of the terms
+//        index = 0;
+//        for (QueryTerm keyword: queryterm) {
+//            double sum = 0;
+//            for (int i = 0; i < relDocs.size(); i++) {
+//                sum += relDocs.get(i).get(index);
+//            }
+//            sum /= relDocs.size();
+//            keyword.weight = alpha * getTfInQuery(keyword.term) / queryterm.size() + beta * sum;
+//
+//            System.out.print(keyword.term + ": " + keyword.weight + " ");
+//            index++;
+//        }
+//        System.out.println();
     }
     
     /**

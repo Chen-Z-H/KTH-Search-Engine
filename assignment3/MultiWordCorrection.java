@@ -14,10 +14,10 @@ import java.util.List;
  */
 public class MultiWordCorrection implements Comparable<MultiWordCorrection> {
     
-    // The current query combination
+    // The current query combinations
     private List<String> words = null;
     
-    // The search results of the current search combination
+    // The search results of the current search combinations
     private List<PostingsEntry> entrys = null;
 
     public MultiWordCorrection(List<String> words, List<PostingsEntry> entrys) {

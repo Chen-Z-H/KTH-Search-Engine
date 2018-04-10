@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import java.lang.Math;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -131,6 +132,7 @@ public class Searcher {
 //        System.out.println("All possible combinations: " + query_combination.size());
         
         PostingsList ret = null;
+        HashMap<Integer, Double> retMap = new HashMap();
         for (int i = query_combination.size() - 1; i >= 0; i--) {
             query.queryterm = (ArrayList)query_combination.get(i);
             PostingsList postingsList = null;
@@ -157,27 +159,30 @@ public class Searcher {
                 if (ret == null) {
                     ret = postingsList;
                 } else {
-                    ret = mergePostingsList(ret, postingsList);
+                    if (postingsList != null) {
+                        ret = mergePostingsList(ret, postingsList);
+                    }
                 }
             } else {
                 // Merge the score for ranked search
-                if (ret == null) {
-                    ret = postingsList;
-                } else {
-                    ArrayList<PostingsEntry> entrylist1 = ret.getList();
-                    ArrayList<PostingsEntry> entrylist2 = postingsList.getList();
-                    for (int j = entrylist2.size() - 1; j >= 0 ; j--) {
-                        PostingsEntry tempEntry = entrylist2.get(j);
-                        // The result set returned by each query may have different length
-                        int index = entrylist1.indexOf(tempEntry);
-                        if (index != -1) {
-                            entrylist1.get(index).score += tempEntry.score;
-                        } else {
-                            entrylist1.add(tempEntry);
-                        }
-                    }
-
-                }
+//                if (ret == null) {
+//                    retMap = mergeHashMapWithList(retMap, postingsList);
+//                } else {
+//                    ArrayList<PostingsEntry> entrylist1 = ret.getList();
+//                    ArrayList<PostingsEntry> entrylist2 = postingsList.getList();
+//                    for (int j = entrylist2.size() - 1; j >= 0 ; j--) {
+//                        PostingsEntry tempEntry = entrylist2.get(j);
+//                        // The result set returned by each query may have different length
+//                        int index = entrylist1.indexOf(tempEntry);
+//                        if (index != -1) {
+//                            entrylist1.get(index).score += tempEntry.score;
+//                        } else {
+//                            entrylist1.add(tempEntry);
+//                        }
+//                    }
+//
+//                }
+                retMap = mergeHashMapWithList(retMap, postingsList);
             }
             
         }
@@ -185,7 +190,15 @@ public class Searcher {
 //        System.out.println("Time (hit): " + time1 / 1000 + ", Time (miss): " + time2 / 1000 + ", Miss: " + miss);
         
         if (queryType == QueryType.RANKED_QUERY) {
-            Collections.sort(ret.getList());
+            ArrayList<PostingsEntry> entries = new ArrayList();
+            Iterator iter = retMap.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                entries.add(new PostingsEntry((int)entry.getKey(), (double)entry.getValue()));
+            }
+            Collections.sort(entries);
+            ret = new PostingsList();
+            ret.setEntrys(entries);
         }
         
         return ret;
@@ -200,6 +213,15 @@ public class Searcher {
             }
         }
         return plist1;
+    }
+    
+    private HashMap<Integer, Double> mergeHashMapWithList(HashMap<Integer, Double> map, PostingsList list) {
+        ArrayList<PostingsEntry> entrylist = list.getList();
+        for (int i = entrylist.size() - 1; i >= 0; i--) {
+            PostingsEntry entry = entrylist.get(i);
+            map.put(entry.docID, entry.score + map.getOrDefault(entry.docID, 0.0));
+        }
+        return map;
     }
     
     /**
@@ -400,7 +422,7 @@ public class Searcher {
             // compute tf and idf of the query vector
 //            int tf_query = query.getTfInQuery(curToken);
             // in the feedback version, we take the weight of the term into consideration
-            double tf_query = /* query.getTfInQuery(curToken) * */ weightOfToken;
+            double tf_query =  query.getTfInQuery(curToken) *  weightOfToken;
 //            System.out.println(curToken + ": " + weightOfToken);
             double idf;
             if (tList == null) {
